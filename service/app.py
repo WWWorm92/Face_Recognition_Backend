@@ -75,6 +75,22 @@ def html_page(title: str, body: str) -> HTMLResponse:
     )
 
 
+def html_error_page(message: str, token: str | None = None) -> HTMLResponse:
+    retry_link = f"/?token={token}" if token else "/"
+    return html_page(
+        "Face Recognition Admin Error",
+        f"""
+        <div class='card' style='max-width:720px;margin:60px auto;'>
+          <h1>Ошибка</h1>
+          <p>{message}</p>
+          <div class='row' style='margin-top:16px;'>
+            <a href='{retry_link}'>Вернуться в панель</a>
+          </div>
+        </div>
+        """,
+    )
+
+
 def save_person_images(person_id: str, files: list[UploadFile], start_index: int = 1) -> list[str]:
     image_paths = []
     for offset, upload in enumerate(files, start=start_index):
@@ -222,7 +238,12 @@ def admin_page(token: str | None = None, authorization: str | None = Header(defa
 @app.post("/ui/people")
 def create_person_ui(token: str | None = None, name: str = Form(...), info: str = Form(""), photos: list[UploadFile] = File(...)):
     ensure_ui_token(token)
-    create_person(name=name, info=info, photos=photos)
+    try:
+        create_person(name=name, info=info, photos=photos)
+    except HTTPException as error:
+        return html_error_page(str(error.detail), token)
+    except Exception as error:
+        return html_error_page(str(error), token)
     return redirect_with_token(token)
 
 
@@ -236,7 +257,12 @@ def delete_person_ui(person_id: str, token: str | None = None):
 @app.post("/ui/sources")
 def create_source_ui(token: str | None = None, name: str = Form(...), url: str = Form(...), enabled: str | None = Form(None)):
     ensure_ui_token(token)
-    create_source(SourceCreate(name=name, url=url, enabled=enabled is not None))
+    try:
+        create_source(SourceCreate(name=name, url=url, enabled=enabled is not None))
+    except HTTPException as error:
+        return html_error_page(str(error.detail), token)
+    except Exception as error:
+        return html_error_page(str(error), token)
     return redirect_with_token(token)
 
 
