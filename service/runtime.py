@@ -15,6 +15,7 @@ from service.storage import EventRecord, SNAPSHOTS_DIR, SourceRecord, Storage
 ANALYZE_INTERVAL = 0.7
 RECONNECT_DELAY = 2.0
 EVENT_COOLDOWN = 8.0
+CONFIRMATION_FRAMES = 2
 
 
 class SourceWorker:
@@ -32,6 +33,8 @@ class SourceWorker:
         self.last_person_name = ""
         self.last_score = 0.0
         self.last_detection_at = ""
+        self.pending_event_key = ""
+        self.pending_event_count = 0
 
     def start(self) -> None:
         if self.thread and self.thread.is_alive():
@@ -76,6 +79,9 @@ class SourceWorker:
                     continue
                 if detections:
                     self.handle_detection(detections[0], frame)
+                else:
+                    self.pending_event_key = ""
+                    self.pending_event_count = 0
             capture.release()
             time.sleep(RECONNECT_DELAY)
 
@@ -102,6 +108,16 @@ class SourceWorker:
     def handle_detection(self, detection: dict, frame) -> None:
         event_key = f"{self.source.source_id}:{detection['person_name']}:{detection['matched']}"
         now = time.time()
+
+        if event_key == self.pending_event_key:
+            self.pending_event_count += 1
+        else:
+            self.pending_event_key = event_key
+            self.pending_event_count = 1
+
+        if self.pending_event_count < CONFIRMATION_FRAMES:
+            return
+
         if event_key == self.last_event_key and now - self.last_event_time < EVENT_COOLDOWN:
             return
         self.last_event_key = event_key

@@ -16,6 +16,10 @@ SFACE_MODEL_URL = "https://media.githubusercontent.com/media/opencv/opencv_zoo/m
 FACE_ANGLES = (0, -20, 20, -10, 10)
 COSINE_THRESHOLD = 0.34
 PROCESS_WIDTH = 480
+DETECTION_SCORE_THRESHOLD = 0.82
+MIN_FACE_WIDTH = 55
+MIN_FACE_HEIGHT = 55
+MIN_FACE_AREA = 4_000
 
 
 def ensure_model(model_path: Path, model_url: str) -> None:
@@ -149,7 +153,19 @@ class FaceEngine:
         _, faces = self.detector.detect(image)
         if faces is None:
             return []
-        return sorted(faces, key=lambda face: float(face[2] * face[3] * face[-1]), reverse=True)
+        filtered_faces = []
+        for face in faces:
+            w = float(face[2])
+            h = float(face[3])
+            score = float(face[-1])
+            if score < DETECTION_SCORE_THRESHOLD:
+                continue
+            if w < MIN_FACE_WIDTH or h < MIN_FACE_HEIGHT:
+                continue
+            if (w * h) < MIN_FACE_AREA:
+                continue
+            filtered_faces.append(face)
+        return sorted(filtered_faces, key=lambda face: float(face[2] * face[3] * face[-1]), reverse=True)
 
     def detect_best_face(self, image: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         best_image = None
