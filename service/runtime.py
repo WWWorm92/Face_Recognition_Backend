@@ -3,12 +3,13 @@ from __future__ import annotations
 import threading
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.parse import urlparse
 
 import cv2
 
 from service.engine import FaceEngine, resolve_stream_candidates
-from service.storage import EventRecord, SourceRecord, Storage
+from service.storage import EventRecord, SNAPSHOTS_DIR, SourceRecord, Storage
 
 
 ANALYZE_INTERVAL = 0.7
@@ -74,7 +75,7 @@ class SourceWorker:
                     self.last_error = str(error)
                     continue
                 if detections:
-                    self.handle_detection(detections[0])
+                    self.handle_detection(detections[0], frame)
             capture.release()
             time.sleep(RECONNECT_DELAY)
 
@@ -98,7 +99,7 @@ class SourceWorker:
             capture.release()
         return None
 
-    def handle_detection(self, detection: dict) -> None:
+    def handle_detection(self, detection: dict, frame) -> None:
         event_key = f"{self.source.source_id}:{detection['person_name']}:{detection['matched']}"
         now = time.time()
         if event_key == self.last_event_key and now - self.last_event_time < EVENT_COOLDOWN:
@@ -108,6 +109,7 @@ class SourceWorker:
         self.last_person_name = detection["person_name"]
         self.last_score = float(detection["score"])
         self.last_detection_at = datetime.now(timezone.utc).isoformat()
+        snapshot_path = save_snapshot(self.source.source_id, int(now * 1000), frame, detection)
         event = EventRecord(
             event_id=f"evt_{int(now * 1000)}",
             timestamp=datetime.now(timezone.utc).isoformat(),
@@ -118,6 +120,7 @@ class SourceWorker:
             person_name=detection["person_name"],
             info=detection["info"],
             score=float(detection["score"]),
+            snapshot_path=snapshot_path,
         )
         self.storage.append_event(event)
 
@@ -227,3 +230,18 @@ def open_local_capture(source_url: str) -> cv2.VideoCapture | None:
         return cv2.VideoCapture(parsed.path)
 
     return None
+
+
+def save_snapshot(source_id: str, timestamp_ms: int, frame, detection: dict) -> str:
+    SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+    snapshot_name = f"{source_id}_{timestamp_ms}.jpg"
+    snapshot_path = SNAPSHOTS_DIR / snapshot_name
+
+    image = frame.copy()
+    x, y, w, h = detection.get("box", (0, 0, 0, 0))
+    if w > 0 and h > 0:
+        color = (0, 180, 0) if detection.get("matched") else (0, 0, 255)
+        cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
+
+    cv2.imwrite(str(snapshot_path), image)
+    return str(Path("service_data") / "snapshots" / snapshot_name)

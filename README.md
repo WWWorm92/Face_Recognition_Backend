@@ -7,6 +7,13 @@ Backend для распознавания лиц и интеграции с Home
 - `service/` - FastAPI API, web UI и фоновые воркеры распознавания;
 - `deploy/` - Docker Compose, nginx и systemd шаблоны.
 
+## Возможности
+
+- несколько фото на одного человека;
+- события распознавания по потокам;
+- сохранение snapshot на каждое событие;
+- web UI для управления людьми и источниками.
+
 ## Запуск локально
 
 ```bash
@@ -18,6 +25,8 @@ Web UI:
 
 - `http://localhost:8787/`
 - `http://localhost:8787/docs`
+
+Snapshots событий сохраняются в `service_data/snapshots/` и доступны через backend.
 
 ## Запуск на сервере
 

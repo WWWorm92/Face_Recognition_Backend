@@ -3,18 +3,20 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from service.engine import FaceEngine
 from service.runtime import RuntimeManager
 from service.schemas import SourceCreate, SourceUpdate
-from service.storage import BASE_DIR, PEOPLE_DIR, PersonRecord, Storage
+from service.storage import BASE_DIR, DATA_DIR, PEOPLE_DIR, PersonRecord, Storage
 
 
 app = FastAPI(title="Home Assistant Face Recognition", version="0.1.0")
 storage = Storage()
 runtime = RuntimeManager(storage)
 API_TOKEN = os.getenv("FACE_API_TOKEN", "").strip()
+app.mount("/service_data", StaticFiles(directory=str(DATA_DIR)), name="service_data")
 
 
 def require_auth(authorization: str | None = Header(default=None)) -> None:
@@ -62,6 +64,7 @@ def html_page(title: str, body: str) -> HTMLResponse:
             .muted {{ color:#9ca3af; font-size:14px; }}
             .metric {{ font-size:28px; font-weight:700; }}
             .mono {{ font-family:Consolas, monospace; word-break:break-all; }}
+            .snapshot {{ margin-top:10px; max-width:220px; border-radius:10px; border:1px solid #374151; display:block; }}
             input, textarea {{ width:100%; padding:10px; border-radius:10px; border:1px solid #374151; background:#111827; color:#f9fafb; box-sizing:border-box; }}
             textarea {{ min-height:88px; resize:vertical; }}
             button {{ padding:10px 14px; border:none; border-radius:10px; background:#2563eb; color:white; cursor:pointer; }}
@@ -178,7 +181,10 @@ def admin_page(token: str | None = None, authorization: str | None = Header(defa
     ) or "<div class='muted'>Источников пока нет.</div>"
 
     events_html = "".join(
-        f"<div class='item'><b>{event.source_name}</b> | {event.person_name} | score {event.score} | {event.timestamp}</div>"
+        f"<div class='item'><b>{event.source_name}</b> | {event.person_name} | score {event.score} | {event.timestamp}"
+        + (f" | <a href='/{event.snapshot_path}' target='_blank'>snapshot</a>" if event.snapshot_path else "")
+        + (f"<br><a href='/{event.snapshot_path}' target='_blank'><img class='snapshot' src='/{event.snapshot_path}' alt='snapshot'></a>" if event.snapshot_path else "")
+        + "</div>"
         for event in events
     ) or "<div class='muted'>Событий пока нет.</div>"
 

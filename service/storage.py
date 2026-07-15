@@ -10,6 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "service_data"
 PEOPLE_DIR = DATA_DIR / "people"
 MODELS_DIR = DATA_DIR / "models"
+SNAPSHOTS_DIR = DATA_DIR / "snapshots"
 PEOPLE_DB = DATA_DIR / "people.json"
 SOURCES_DB = DATA_DIR / "sources.json"
 EVENTS_DB = DATA_DIR / "events.json"
@@ -43,6 +44,7 @@ class EventRecord:
     person_name: str
     info: str
     score: float
+    snapshot_path: str = ""
 
 
 class Storage:
@@ -54,6 +56,7 @@ class Storage:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         PEOPLE_DIR.mkdir(parents=True, exist_ok=True)
         MODELS_DIR.mkdir(parents=True, exist_ok=True)
+        SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
         for path in (PEOPLE_DB, SOURCES_DB, EVENTS_DB):
             if not path.exists():
                 path.write_text("[]", encoding="utf-8")
