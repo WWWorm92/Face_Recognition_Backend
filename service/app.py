@@ -5,6 +5,7 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from service.engine import FaceEngine
 from service.runtime import RuntimeManager
 from service.schemas import SourceCreate, SourceUpdate
 from service.storage import BASE_DIR, PEOPLE_DIR, PersonRecord, Storage
@@ -308,9 +309,10 @@ def create_person(name: str = Form(...), info: str = Form(""), photos: list[Uplo
         raise HTTPException(status_code=400, detail="At least one photo is required")
     person_id = uuid4().hex
     image_paths = save_person_images(person_id, photos)
+    engine = FaceEngine()
     embeddings = []
     for path in image_paths:
-        embeddings.extend(runtime.engine.extract_embeddings_from_bytes((BASE_DIR / path).read_bytes()))
+        embeddings.extend(engine.extract_embeddings_from_bytes((BASE_DIR / path).read_bytes()))
     person = PersonRecord(person_id=person_id, name=name.strip(), info=info.strip(), image_paths=image_paths, embeddings=embeddings)
     people = storage.list_people()
     people.append(person)
@@ -325,8 +327,9 @@ def append_person_photos(person_id: str, photos: list[UploadFile] = File(...)) -
         raise HTTPException(status_code=404, detail="Person not found")
     start_index = len(person.image_paths) + 1
     image_paths = save_person_images(person_id, photos, start_index=start_index)
+    engine = FaceEngine()
     for path in image_paths:
-        person.embeddings.extend(runtime.engine.extract_embeddings_from_bytes((BASE_DIR / path).read_bytes()))
+        person.embeddings.extend(engine.extract_embeddings_from_bytes((BASE_DIR / path).read_bytes()))
     person.image_paths.extend(image_paths)
     storage.update_person(person)
     return person.__dict__
