@@ -138,7 +138,6 @@ class SourceWorker:
 class RuntimeManager:
     def __init__(self, storage: Storage) -> None:
         self.storage = storage
-        self.engine = FaceEngine()
         self.workers: dict[str, SourceWorker] = {}
         self.lock = threading.Lock()
 
@@ -161,13 +160,13 @@ class RuntimeManager:
         with self.lock:
             worker = self.workers.get(source_id)
             if worker is None:
-                worker = SourceWorker(source, self.storage, self.engine)
+                worker = SourceWorker(source, self.storage, FaceEngine())
                 self.workers[source_id] = worker
             else:
                 if worker.source.url != source.url or worker.source.enabled != source.enabled or worker.source.name != source.name:
                     old_worker = self.workers.pop(source_id)
                     old_worker.stop()
-                    worker = SourceWorker(source, self.storage, self.engine)
+                    worker = SourceWorker(source, self.storage, FaceEngine())
                     self.workers[source_id] = worker
                 else:
                     worker.source = source
