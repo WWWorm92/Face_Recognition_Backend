@@ -1,0 +1,13 @@
+services:
+  face-recognition-api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: face-recognition-api
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      - FACE_API_TOKEN=change_me_long_random_token
+    volumes:
+      - ../service_data:/app/service_data

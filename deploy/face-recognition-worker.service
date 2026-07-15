@@ -1,0 +1,15 @@
+[Unit]
+Description=Face Recognition Worker API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/opt/face_recognition_backend
+ExecStart=/opt/face_recognition_backend/.venv/bin/uvicorn service.app:app --host 0.0.0.0 --port 8787
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+services:
+  face-recognition-worker:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: face-recognition-worker
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    volumes:
+      - ../service_data:/app/service_data
+      - /dev:/dev
+    devices:
+      - /dev/video0:/dev/video0
+    environment:
+      - OPENCV_VIDEOIO_PRIORITY_V4L2=1
