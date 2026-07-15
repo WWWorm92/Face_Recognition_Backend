@@ -14,6 +14,17 @@ SNAPSHOTS_DIR = DATA_DIR / "snapshots"
 PEOPLE_DB = DATA_DIR / "people.json"
 SOURCES_DB = DATA_DIR / "sources.json"
 EVENTS_DB = DATA_DIR / "events.json"
+SETTINGS_DB = DATA_DIR / "settings.json"
+
+
+@dataclass
+class RecognitionSettings:
+    cosine_threshold: float = 0.34
+    detection_score_threshold: float = 0.82
+    min_face_width: int = 55
+    min_face_height: int = 55
+    min_face_area: int = 4000
+    confirmation_frames: int = 2
 
 
 @dataclass
@@ -60,6 +71,8 @@ class Storage:
         for path in (PEOPLE_DB, SOURCES_DB, EVENTS_DB):
             if not path.exists():
                 path.write_text("[]", encoding="utf-8")
+        if not SETTINGS_DB.exists():
+            SETTINGS_DB.write_text(json.dumps(asdict(RecognitionSettings()), ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _load_json(self, path: Path) -> list[dict[str, Any]]:
         self.ensure_dirs()
@@ -67,6 +80,16 @@ class Storage:
 
     def _save_json(self, path: Path, payload: list[dict[str, Any]]) -> None:
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def get_settings(self) -> RecognitionSettings:
+        with self.lock:
+            self.ensure_dirs()
+            payload = json.loads(SETTINGS_DB.read_text(encoding="utf-8"))
+            return RecognitionSettings(**payload)
+
+    def save_settings(self, settings: RecognitionSettings) -> None:
+        with self.lock:
+            SETTINGS_DB.write_text(json.dumps(asdict(settings), ensure_ascii=False, indent=2), encoding="utf-8")
 
     def list_people(self) -> list[PersonRecord]:
         with self.lock:

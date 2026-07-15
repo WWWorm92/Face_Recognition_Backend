@@ -9,13 +9,12 @@ from urllib.parse import urlparse
 import cv2
 
 from service.engine import FaceEngine, resolve_stream_candidates
-from service.storage import EventRecord, SNAPSHOTS_DIR, SourceRecord, Storage
+from service.storage import EventRecord, RecognitionSettings, SNAPSHOTS_DIR, SourceRecord, Storage
 
 
 ANALYZE_INTERVAL = 0.7
 RECONNECT_DELAY = 2.0
 EVENT_COOLDOWN = 8.0
-CONFIRMATION_FRAMES = 2
 
 
 class SourceWorker:
@@ -35,6 +34,7 @@ class SourceWorker:
         self.last_detection_at = ""
         self.pending_event_key = ""
         self.pending_event_count = 0
+        self.settings = storage.get_settings()
 
     def start(self) -> None:
         if self.thread and self.thread.is_alive():
@@ -72,6 +72,8 @@ class SourceWorker:
                     continue
                 last_analysis = now
                 people_cache = self.storage.list_people()
+                self.settings = self.storage.get_settings()
+                self.engine.set_settings(self.settings)
                 try:
                     detections = self.engine.analyze_frame(frame, people_cache)
                 except Exception as error:
@@ -115,7 +117,7 @@ class SourceWorker:
             self.pending_event_key = event_key
             self.pending_event_count = 1
 
-        if self.pending_event_count < CONFIRMATION_FRAMES:
+        if self.pending_event_count < self.settings.confirmation_frames:
             return
 
         if event_key == self.last_event_key and now - self.last_event_time < EVENT_COOLDOWN:

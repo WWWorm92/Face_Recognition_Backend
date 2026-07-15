@@ -6,7 +6,7 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 import cv2
 import numpy as np
 
-from service.storage import MODELS_DIR, PersonRecord
+from service.storage import MODELS_DIR, PersonRecord, RecognitionSettings
 
 
 YUNET_MODEL_PATH = MODELS_DIR / "face_detection_yunet_2023mar.onnx"
@@ -14,12 +14,7 @@ SFACE_MODEL_PATH = MODELS_DIR / "face_recognition_sface_2021dec.onnx"
 YUNET_MODEL_URL = "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx"
 SFACE_MODEL_URL = "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx"
 FACE_ANGLES = (0, -20, 20, -10, 10)
-COSINE_THRESHOLD = 0.34
 PROCESS_WIDTH = 480
-DETECTION_SCORE_THRESHOLD = 0.82
-MIN_FACE_WIDTH = 55
-MIN_FACE_HEIGHT = 55
-MIN_FACE_AREA = 4_000
 
 
 def ensure_model(model_path: Path, model_url: str) -> None:
@@ -141,11 +136,15 @@ def resolve_stream_candidates(source_url: str) -> list[str]:
 
 
 class FaceEngine:
-    def __init__(self) -> None:
+    def __init__(self, settings: RecognitionSettings | None = None) -> None:
         ensure_model(YUNET_MODEL_PATH, YUNET_MODEL_URL)
         ensure_model(SFACE_MODEL_PATH, SFACE_MODEL_URL)
         self.detector = cv2.FaceDetectorYN.create(str(YUNET_MODEL_PATH), "", (640, 480), 0.75, 0.3, 5000)
         self.recognizer = cv2.FaceRecognizerSF.create(str(SFACE_MODEL_PATH), "")
+        self.settings = settings or RecognitionSettings()
+
+    def set_settings(self, settings: RecognitionSettings) -> None:
+        self.settings = settings
 
     def detect_faces(self, image: np.ndarray) -> list[np.ndarray]:
         height, width = image.shape[:2]
@@ -158,11 +157,11 @@ class FaceEngine:
             w = float(face[2])
             h = float(face[3])
             score = float(face[-1])
-            if score < DETECTION_SCORE_THRESHOLD:
+            if score < self.settings.detection_score_threshold:
                 continue
-            if w < MIN_FACE_WIDTH or h < MIN_FACE_HEIGHT:
+            if w < self.settings.min_face_width or h < self.settings.min_face_height:
                 continue
-            if (w * h) < MIN_FACE_AREA:
+            if (w * h) < self.settings.min_face_area:
                 continue
             filtered_faces.append(face)
         return sorted(filtered_faces, key=lambda face: float(face[2] * face[3] * face[-1]), reverse=True)
@@ -222,7 +221,7 @@ class FaceEngine:
                 continue
             query_embedding = self.recognizer.feature(aligned_face)
             record, score = self.match_embedding(query_embedding, records)
-            matched = record is not None and score >= COSINE_THRESHOLD
+            matched = record is not None and score >= self.settings.cosine_threshold
             result.append(
                 {
                     "box": (x, y, w, h),

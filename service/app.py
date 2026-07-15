@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from service.engine import FaceEngine
 from service.runtime import RuntimeManager
 from service.schemas import SourceCreate, SourceUpdate
-from service.storage import BASE_DIR, DATA_DIR, PEOPLE_DIR, PersonRecord, Storage
+from service.storage import BASE_DIR, DATA_DIR, PEOPLE_DIR, PersonRecord, RecognitionSettings, Storage
 
 
 app = FastAPI(title="Home Assistant Face Recognition", version="0.1.0")
@@ -136,6 +136,7 @@ def admin_page(token: str | None = None, authorization: str | None = Header(defa
 
     people = storage.list_people()
     sources = storage.list_sources()
+    settings = storage.get_settings()
     statuses = {item["source_id"]: item for item in runtime.get_source_statuses()}
     events = storage.list_events()[-20:][::-1]
 
@@ -217,6 +218,45 @@ def admin_page(token: str | None = None, authorization: str | None = Header(defa
       </div>
       <div>
         <div class='card'>
+          <h2>Настройки точности</h2>
+          <form method='post' action='/ui/settings?token={token or ""}'>
+            <div class='row'>
+              <div style='flex:1'>
+                <label>Порог совпадения</label>
+                <input name='cosine_threshold' type='number' min='0' max='1' step='0.01' value='{settings.cosine_threshold}' required>
+              </div>
+              <div style='flex:1'>
+                <label>Порог детекции</label>
+                <input name='detection_score_threshold' type='number' min='0' max='1' step='0.01' value='{settings.detection_score_threshold}' required>
+              </div>
+            </div>
+            <div style='height:10px'></div>
+            <div class='row'>
+              <div style='flex:1'>
+                <label>Мин. ширина лица</label>
+                <input name='min_face_width' type='number' min='1' step='1' value='{settings.min_face_width}' required>
+              </div>
+              <div style='flex:1'>
+                <label>Мин. высота лица</label>
+                <input name='min_face_height' type='number' min='1' step='1' value='{settings.min_face_height}' required>
+              </div>
+            </div>
+            <div style='height:10px'></div>
+            <div class='row'>
+              <div style='flex:1'>
+                <label>Мин. площадь лица</label>
+                <input name='min_face_area' type='number' min='1' step='1' value='{settings.min_face_area}' required>
+              </div>
+              <div style='flex:1'>
+                <label>Подтверждений подряд</label>
+                <input name='confirmation_frames' type='number' min='1' step='1' value='{settings.confirmation_frames}' required>
+              </div>
+            </div>
+            <div style='height:10px'></div>
+            <button type='submit'>Сохранить настройки</button>
+          </form>
+        </div>
+        <div class='card'>
           <h2>Добавить источник</h2>
           <form method='post' action='/ui/sources?token={token or ""}'>
             <input name='name' placeholder='Имя источника' required>
@@ -273,6 +313,29 @@ def create_source_ui(token: str | None = None, name: str = Form(...), url: str =
     return redirect_with_token(token)
 
 
+@app.post("/ui/settings")
+def update_settings_ui(
+    token: str | None = None,
+    cosine_threshold: float = Form(...),
+    detection_score_threshold: float = Form(...),
+    min_face_width: int = Form(...),
+    min_face_height: int = Form(...),
+    min_face_area: int = Form(...),
+    confirmation_frames: int = Form(...),
+):
+    ensure_ui_token(token)
+    settings = RecognitionSettings(
+        cosine_threshold=max(0.0, min(1.0, cosine_threshold)),
+        detection_score_threshold=max(0.0, min(1.0, detection_score_threshold)),
+        min_face_width=max(1, min_face_width),
+        min_face_height=max(1, min_face_height),
+        min_face_area=max(1, min_face_area),
+        confirmation_frames=max(1, confirmation_frames),
+    )
+    storage.save_settings(settings)
+    return redirect_with_token(token)
+
+
 @app.post("/ui/sources/{source_id}/start")
 def start_source_ui(source_id: str, token: str | None = None):
     ensure_ui_token(token)
@@ -315,7 +378,7 @@ def create_person(name: str = Form(...), info: str = Form(""), photos: list[Uplo
         raise HTTPException(status_code=400, detail="At least one photo is required")
     person_id = uuid4().hex
     image_paths = save_person_images(person_id, photos)
-    engine = FaceEngine()
+    engine = FaceEngine(storage.get_settings())
     embeddings = []
     for path in image_paths:
         embeddings.extend(engine.extract_embeddings_from_bytes((BASE_DIR / path).read_bytes()))
@@ -333,7 +396,7 @@ def append_person_photos(person_id: str, photos: list[UploadFile] = File(...)) -
         raise HTTPException(status_code=404, detail="Person not found")
     start_index = len(person.image_paths) + 1
     image_paths = save_person_images(person_id, photos, start_index=start_index)
-    engine = FaceEngine()
+    engine = FaceEngine(storage.get_settings())
     for path in image_paths:
         person.embeddings.extend(engine.extract_embeddings_from_bytes((BASE_DIR / path).read_bytes()))
     person.image_paths.extend(image_paths)
