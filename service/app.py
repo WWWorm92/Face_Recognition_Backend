@@ -56,30 +56,51 @@ def html_page(title: str, body: str) -> HTMLResponse:
           <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
           <title>{title}</title>
           <style>
-            body {{ font-family: Inter, Arial, sans-serif; background:#0b1220; color:#f8fafc; margin:0; padding:24px; }}
+            :root {{ color-scheme: dark; }}
+            body {{ font-family: Inter, Arial, sans-serif; background:radial-gradient(circle at top, #16243d 0%, #0b1220 38%, #08101c 100%); color:#f8fafc; margin:0; padding:24px; }}
             h1,h2,h3 {{ margin:0 0 12px; }}
-            .grid {{ display:grid; grid-template-columns:1.12fr 1fr; gap:20px; align-items:start; }}
+            .page {{ max-width:1440px; margin:0 auto; }}
+            .hero {{ display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:22px; }}
+            .hero h1 {{ font-size:34px; margin-bottom:8px; }}
+            .hero p {{ margin:0; color:#9fb0c8; max-width:760px; line-height:1.5; }}
+            .grid {{ display:grid; grid-template-columns:1.08fr 1fr; gap:20px; align-items:start; }}
+            .stats {{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px; margin-bottom:20px; }}
             .row {{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }}
-            .card {{ background:linear-gradient(180deg,#172033,#101827); border:1px solid #263247; border-radius:16px; padding:18px; margin-bottom:18px; box-shadow:0 10px 30px rgba(0,0,0,0.18); }}
+            .stack {{ display:flex; flex-direction:column; gap:18px; }}
+            .card {{ background:linear-gradient(180deg,rgba(23,32,51,0.96),rgba(12,18,31,0.98)); border:1px solid #263247; border-radius:18px; padding:18px; box-shadow:0 14px 40px rgba(0,0,0,0.22); backdrop-filter:blur(10px); }}
+            .metric-card {{ padding:18px 20px; }}
             .item {{ border-top:1px solid #2b3649; padding-top:14px; margin-top:14px; }}
             .muted {{ color:#9fb0c8; font-size:14px; }}
-            .metric {{ font-size:28px; font-weight:700; }}
+            .metric {{ font-size:30px; font-weight:700; margin-top:8px; }}
             .mono {{ font-family:Consolas, monospace; word-break:break-all; }}
-            .snapshot {{ margin-top:10px; max-width:220px; border-radius:10px; border:1px solid #374151; display:block; }}
-            .thumb {{ width:92px; height:92px; object-fit:cover; border-radius:10px; border:1px solid #374151; display:block; }}
+            .snapshot {{ margin-top:10px; max-width:220px; border-radius:12px; border:1px solid #374151; display:block; }}
+            .thumb {{ width:92px; height:92px; object-fit:cover; border-radius:12px; border:1px solid #374151; display:block; }}
             .thumb-grid {{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }}
-            .pill {{ display:inline-block; padding:4px 10px; border-radius:999px; background:#0b1220; border:1px solid #314056; font-size:12px; }}
-            .section-title {{ display:flex; justify-content:space-between; align-items:center; gap:10px; }}
-            input, textarea {{ width:100%; padding:10px; border-radius:10px; border:1px solid #374151; background:#0b1220; color:#f8fafc; box-sizing:border-box; }}
+            .pill {{ display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; background:#0b1220; border:1px solid #314056; font-size:12px; color:#dbe6f5; }}
+            .section-title {{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }}
+            .toolbar {{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }}
+            .field-grid {{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }}
+            .field-grid.four {{ grid-template-columns:repeat(4, minmax(0, 1fr)); }}
+            input, textarea {{ width:100%; padding:11px 12px; border-radius:12px; border:1px solid #374151; background:#0b1220; color:#f8fafc; box-sizing:border-box; }}
+            input[type='file'] {{ padding:8px; }}
             textarea {{ min-height:88px; resize:vertical; }}
-            button {{ padding:10px 14px; border:none; border-radius:10px; background:#2563eb; color:white; cursor:pointer; }}
+            button {{ padding:10px 14px; border:none; border-radius:12px; background:#2563eb; color:white; cursor:pointer; font-weight:600; }}
             button.secondary {{ background:#334155; }}
             button.danger {{ background:#b91c1c; }}
             a {{ color:#93c5fd; text-decoration:none; }}
-            label {{ font-size:13px; color:#cbd5e1; display:block; margin-bottom:4px; }}
+            label {{ font-size:13px; color:#cbd5e1; display:block; margin-bottom:6px; }}
+            details {{ border:1px solid #243047; border-radius:14px; background:rgba(8,16,28,0.55); }}
+            summary {{ list-style:none; cursor:pointer; padding:12px 14px; font-weight:600; display:flex; align-items:center; justify-content:space-between; }}
+            summary::-webkit-details-marker {{ display:none; }}
+            .details-body {{ padding:0 14px 14px; }}
+            .source-preview {{ position:relative; display:inline-block; margin-top:8px; border:1px solid #314056; border-radius:12px; overflow:hidden; background:#020617; }}
+            .source-preview img {{ display:block; width:360px; max-width:100%; }}
+            .events-list .item:first-child, .people-list .item:first-child, .source-list .item:first-child {{ border-top:none; margin-top:0; padding-top:0; }}
+            @media (max-width: 1180px) {{ .grid {{ grid-template-columns:1fr; }} .stats {{ grid-template-columns:repeat(2, minmax(0, 1fr)); }} }}
+            @media (max-width: 760px) {{ body {{ padding:14px; }} .hero {{ flex-direction:column; }} .stats {{ grid-template-columns:1fr; }} .field-grid, .field-grid.four {{ grid-template-columns:1fr; }} }}
           </style>
         </head>
-        <body>{body}</body>
+        <body><div class='page'>{body}</div></body>
         </html>
         """
     )
@@ -168,24 +189,26 @@ def admin_page(token: str | None = None, authorization: str | None = Header(defa
     people_html = "".join(
         f"""
         <div class='item'>
-          <div class='section-title'><h3>{person.name}</h3><span class='pill'>{len(person.image_paths)} фото</span></div>
+          <div class='section-title'><h3>{person.name}</h3><div class='row'><span class='pill'>{len(person.image_paths)} фото</span><span class='pill'>{len(person.embeddings)} эмбеддингов</span></div></div>
           <div class='muted'>{person.info or 'Без дополнительных данных'}</div>
-          <div class='row' style='margin-top:10px;'>
-            <span class='pill'>Эмбеддинги: <b>{len(person.embeddings)}</b></span>
-          </div>
-          <div class='thumb-grid'>
-            {''.join(f"<div><a href='/{path}' target='_blank'><img class='thumb' src='/{path}' alt='photo'></a><form method='post' action='/ui/people/{person.person_id}/photos/delete?token={token or ''}' style='margin-top:6px;'><input type='hidden' name='photo_path' value='{path}'><button class='secondary' type='submit'>Удалить фото</button></form></div>" for path in person.image_paths)}
-          </div>
-          <div class='row' style='margin-top:12px;'>
-            <form method='post' action='/ui/people/{person.person_id}/photos?token={token or ""}' enctype='multipart/form-data'>
-              <input type='file' name='photos' multiple required>
-              <div style='height:8px'></div>
-              <button type='submit'>Добавить фото</button>
-            </form>
-            <form method='post' action='/ui/people/{person.person_id}/delete?token={token or ""}'>
-              <button class='danger' type='submit'>Удалить человека</button>
-            </form>
-          </div>
+          <details style='margin-top:12px;'>
+            <summary>Фото и управление профилем</summary>
+            <div class='details-body'>
+              <div class='thumb-grid'>
+                {''.join(f"<div><a href='/{path}' target='_blank'><img class='thumb' src='/{path}' alt='photo'></a><form method='post' action='/ui/people/{person.person_id}/photos/delete?token={token or ''}' style='margin-top:6px;'><input type='hidden' name='photo_path' value='{path}'><button class='secondary' type='submit'>Удалить фото</button></form></div>" for path in person.image_paths)}
+              </div>
+              <div class='row' style='margin-top:12px;'>
+                <form method='post' action='/ui/people/{person.person_id}/photos?token={token or ""}' enctype='multipart/form-data'>
+                  <input type='file' name='photos' multiple required>
+                  <div style='height:8px'></div>
+                  <button type='submit'>Добавить фото</button>
+                </form>
+                <form method='post' action='/ui/people/{person.person_id}/delete?token={token or ""}'>
+                  <button class='danger' type='submit'>Удалить человека</button>
+                </form>
+              </div>
+            </div>
+          </details>
         </div>
         """
         for person in people
@@ -200,32 +223,37 @@ def admin_page(token: str | None = None, authorization: str | None = Header(defa
             <span class='pill'>Последний человек: <b>{statuses.get(source.source_id, {}).get('last_person_name', '') or '-'}</b></span>
             <span class='pill'>Score: <b>{statuses.get(source.source_id, {}).get('last_score', 0.0)}</b></span>
           </div>
-          <div class='muted'>ROI: {'on' if source.roi_enabled else 'off'} ({source.roi_x:.2f}, {source.roi_y:.2f}, {source.roi_w:.2f}, {source.roi_h:.2f})</div>
           <div class='muted'>Resolved URL: {statuses.get(source.source_id, {}).get('resolved_url', '') or '-'}</div>
           <div class='muted'>Ошибка: {statuses.get(source.source_id, {}).get('last_error', '') or '-'}</div>
-          <div style='margin-top:12px;'>
-            <div class='muted'>Нарисуй ROI мышью на кадре и потом сохрани.</div>
-            <div id='roi-wrap-{source.source_id}' style='position:relative;display:inline-block;margin-top:8px;border:1px solid #314056;border-radius:12px;overflow:hidden;'>
-              <img id='roi-image-{source.source_id}' src='/ui/sources/{source.source_id}/preview?token={token or ""}' alt='roi preview' style='display:block;max-width:100%;width:360px;background:#020617;'>
-              <div id='roi-box-{source.source_id}' style='position:absolute;border:2px solid #22c55e;background:rgba(34,197,94,0.16);left:{source.roi_x * 100}%;top:{source.roi_y * 100}%;width:{source.roi_w * 100}%;height:{source.roi_h * 100}%;pointer-events:none;'></div>
+          <details style='margin-top:12px;'>
+            <summary>Область интереса (ROI)</summary>
+            <div class='details-body'>
+              <div class='muted'>Используй ROI, чтобы распознавание работало только в нужной зоне кадра.</div>
+              <div class='source-preview'>
+                <img id='roi-image-{source.source_id}' src='/ui/sources/{source.source_id}/preview?token={token or ""}' alt='roi preview'>
+                <div id='roi-wrap-{source.source_id}' style='position:absolute; inset:0;'>
+                  <div id='roi-box-{source.source_id}' style='position:absolute;border:2px solid #22c55e;background:rgba(34,197,94,0.16);left:{source.roi_x * 100}%;top:{source.roi_y * 100}%;width:{source.roi_w * 100}%;height:{source.roi_h * 100}%;pointer-events:none;'></div>
+                </div>
+              </div>
+              <form method='post' action='/ui/sources/{source.source_id}/roi?token={token or ""}' style='margin-top:12px;'>
+                <div class='row'>
+                  <label><input type='checkbox' name='roi_enabled' {'checked' if source.roi_enabled else ''}> Использовать ROI</label>
+                  <span class='pill'>X {source.roi_x:.2f}</span>
+                  <span class='pill'>Y {source.roi_y:.2f}</span>
+                  <span class='pill'>W {source.roi_w:.2f}</span>
+                  <span class='pill'>H {source.roi_h:.2f}</span>
+                </div>
+                <div class='field-grid four' style='margin-top:10px;'>
+                  <div><label>X</label><input id='roi-x-{source.source_id}' name='roi_x' type='number' min='0' max='1' step='0.01' value='{source.roi_x}'></div>
+                  <div><label>Y</label><input id='roi-y-{source.source_id}' name='roi_y' type='number' min='0' max='1' step='0.01' value='{source.roi_y}'></div>
+                  <div><label>W</label><input id='roi-w-{source.source_id}' name='roi_w' type='number' min='0.01' max='1' step='0.01' value='{source.roi_w}'></div>
+                  <div><label>H</label><input id='roi-h-{source.source_id}' name='roi_h' type='number' min='0.01' max='1' step='0.01' value='{source.roi_h}'></div>
+                </div>
+                <div style='height:10px'></div>
+                <button class='secondary' type='submit'>Сохранить ROI</button>
+              </form>
             </div>
-          </div>
-          <form method='post' action='/ui/sources/{source.source_id}/roi?token={token or ""}' style='margin-top:12px;'>
-            <div class='row'>
-              <label><input type='checkbox' name='roi_enabled' {'checked' if source.roi_enabled else ''}> Использовать ROI</label>
-            </div>
-            <div class='row' style='margin-top:8px;'>
-              <div style='flex:1'><label>X</label><input id='roi-x-{source.source_id}' name='roi_x' type='number' min='0' max='1' step='0.01' value='{source.roi_x}'></div>
-              <div style='flex:1'><label>Y</label><input id='roi-y-{source.source_id}' name='roi_y' type='number' min='0' max='1' step='0.01' value='{source.roi_y}'></div>
-              <div style='flex:1'><label>W</label><input id='roi-w-{source.source_id}' name='roi_w' type='number' min='0.01' max='1' step='0.01' value='{source.roi_w}'></div>
-              <div style='flex:1'><label>H</label><input id='roi-h-{source.source_id}' name='roi_h' type='number' min='0.01' max='1' step='0.01' value='{source.roi_h}'></div>
-            </div>
-            <div style='height:8px'></div>
-            <div class='row'>
-              <button class='secondary' type='button' onclick="reloadPreview('{source.source_id}', '{token or ''}')">Обновить кадр</button>
-              <button class='secondary' type='submit'>Сохранить ROI</button>
-            </div>
-          </form>
+          </details>
           <div class='row' style='margin-top:12px;'>
             <form method='post' action='/ui/sources/{source.source_id}/start?token={token or ""}'><button type='submit'>Старт</button></form>
             <form method='post' action='/ui/sources/{source.source_id}/stop?token={token or ""}'><button class='secondary' type='submit'>Стоп</button></form>
@@ -245,84 +273,83 @@ def admin_page(token: str | None = None, authorization: str | None = Header(defa
     ) or "<div class='muted'>Событий пока нет.</div>"
 
     body = f"""
-    <h1>Face Recognition Admin</h1>
-    <div class='row'>
-      <div class='card'><div class='muted'>Людей</div><div class='metric'>{len(people)}</div></div>
-      <div class='card'><div class='muted'>Источников</div><div class='metric'>{len(sources)}</div></div>
-      <div class='card'><div class='muted'>Событий</div><div class='metric'>{len(storage.list_events())}</div></div>
-      <div class='card'><div class='muted'>API Docs</div><div><a href='/docs'>/docs</a></div></div>
+    <div class='hero'>
+      <div>
+        <h1>Face Recognition Admin</h1>
+        <p>Управляй людьми, камерами и точностью распознавания из одной панели. Базовые действия всегда на виду, тонкие настройки спрятаны в аккуратные секции.</p>
+      </div>
+      <div class='toolbar'>
+        <a class='pill' href='/docs'>API Docs</a>
+      </div>
+    </div>
+    <div class='stats'>
+      <div class='card metric-card'><div class='muted'>Людей</div><div class='metric'>{len(people)}</div></div>
+      <div class='card metric-card'><div class='muted'>Источников</div><div class='metric'>{len(sources)}</div></div>
+      <div class='card metric-card'><div class='muted'>Событий</div><div class='metric'>{len(storage.list_events())}</div></div>
+      <div class='card metric-card'><div class='muted'>Порог совпадения</div><div class='metric'>{settings.cosine_threshold:.2f}</div></div>
     </div>
     <div class='grid'>
       <div>
         <div class='card'>
-          <h2>Добавить человека</h2>
+          <div class='section-title'><h2>Люди</h2><span class='pill'>База лиц</span></div>
           <form method='post' action='/ui/people?token={token or ""}' enctype='multipart/form-data'>
-            <input name='name' placeholder='Имя' required>
+            <div class='field-grid'>
+              <div><label>Имя</label><input name='name' placeholder='Имя' required></div>
+              <div><label>Фото</label><input type='file' name='photos' multiple required></div>
+            </div>
             <div style='height:10px'></div>
-            <textarea name='info' placeholder='Данные'></textarea>
-            <div style='height:10px'></div>
-            <input type='file' name='photos' multiple required>
-            <div style='height:10px'></div>
+            <label>Данные</label><textarea name='info' placeholder='Телефон, роль, примечание'></textarea>
+            <div style='height:12px'></div>
             <button type='submit'>Сохранить</button>
           </form>
-        </div>
-        <div class='card'>
-          <h2>Люди</h2>
-          {people_html}
+          <div class='people-list' style='margin-top:18px;'>{people_html}</div>
         </div>
       </div>
       <div>
         <div class='card'>
-          <h2>Настройки точности</h2>
-          <form method='post' action='/ui/settings?token={token or ""}'>
-            <div class='row'>
-              <div style='flex:1'><label>Порог совпадения</label><input name='cosine_threshold' type='number' min='0' max='1' step='0.01' value='{settings.cosine_threshold}' required></div>
-              <div style='flex:1'><label>Порог детекции</label><input name='detection_score_threshold' type='number' min='0' max='1' step='0.01' value='{settings.detection_score_threshold}' required></div>
-            </div>
-            <div style='height:10px'></div>
-            <div class='row'>
-              <div style='flex:1'><label>Мин. ширина лица</label><input name='min_face_width' type='number' min='1' step='1' value='{settings.min_face_width}' required></div>
-              <div style='flex:1'><label>Мин. высота лица</label><input name='min_face_height' type='number' min='1' step='1' value='{settings.min_face_height}' required></div>
-            </div>
-            <div style='height:10px'></div>
-            <div class='row'>
-              <div style='flex:1'><label>Мин. площадь лица</label><input name='min_face_area' type='number' min='1' step='1' value='{settings.min_face_area}' required></div>
-              <div style='flex:1'><label>Подтверждений подряд</label><input name='confirmation_frames' type='number' min='1' step='1' value='{settings.confirmation_frames}' required></div>
-            </div>
-            <div style='height:10px'></div>
-            <button type='submit'>Сохранить настройки</button>
-          </form>
-        </div>
-        <div class='card'>
-          <h2>Добавить источник</h2>
+          <div class='section-title'><h2>Источники</h2><span class='pill'>Камеры и потоки</span></div>
           <form method='post' action='/ui/sources?token={token or ""}'>
-            <input name='name' placeholder='Имя источника' required>
-            <div style='height:10px'></div>
-            <input name='url' placeholder='rtsp://..., device://0, whep/html URL' required>
+            <div class='field-grid'>
+              <div><label>Имя источника</label><input name='name' placeholder='Подъезд 2' required></div>
+              <div><label>URL</label><input name='url' placeholder='rtsp://..., device://0, whep/html URL' required></div>
+            </div>
             <div style='height:10px'></div>
             <label><input type='checkbox' name='enabled' checked> Включить сразу</label>
-            <div style='height:10px'></div>
+            <div style='height:12px'></div>
             <button type='submit'>Добавить источник</button>
           </form>
+          <div class='source-list' style='margin-top:18px;'>{sources_html}</div>
         </div>
+        <details class='card'>
+          <summary>Тонкая настройка точности</summary>
+          <div class='details-body'>
+            <form method='post' action='/ui/settings?token={token or ""}'>
+              <div class='field-grid'>
+                <div><label>Порог совпадения</label><input name='cosine_threshold' type='number' min='0' max='1' step='0.01' value='{settings.cosine_threshold}' required></div>
+                <div><label>Порог детекции</label><input name='detection_score_threshold' type='number' min='0' max='1' step='0.01' value='{settings.detection_score_threshold}' required></div>
+              </div>
+              <div style='height:10px'></div>
+              <div class='field-grid'>
+                <div><label>Мин. ширина лица</label><input name='min_face_width' type='number' min='1' step='1' value='{settings.min_face_width}' required></div>
+                <div><label>Мин. высота лица</label><input name='min_face_height' type='number' min='1' step='1' value='{settings.min_face_height}' required></div>
+              </div>
+              <div style='height:10px'></div>
+              <div class='field-grid'>
+                <div><label>Мин. площадь лица</label><input name='min_face_area' type='number' min='1' step='1' value='{settings.min_face_area}' required></div>
+                <div><label>Подтверждений подряд</label><input name='confirmation_frames' type='number' min='1' step='1' value='{settings.confirmation_frames}' required></div>
+              </div>
+              <div style='height:12px'></div>
+              <button type='submit'>Сохранить настройки</button>
+            </form>
+          </div>
+        </details>
         <div class='card'>
-          <h2>Источники</h2>
-          {sources_html}
-        </div>
-        <div class='card'>
-          <h2>Последние события</h2>
-          {events_html}
+          <div class='section-title'><h2>Последние события</h2><span class='pill'>{len(events)} последних</span></div>
+          <div class='events-list'>{events_html}</div>
         </div>
       </div>
     </div>
     <script>
-      function reloadPreview(sourceId, token) {{
-        const img = document.getElementById(`roi-image-${{sourceId}}`);
-        if (!img) return;
-        const suffix = token ? `?token=${{encodeURIComponent(token)}}&t=${{Date.now()}}` : `?t=${{Date.now()}}`;
-        img.src = `/ui/sources/${{sourceId}}/preview` + suffix;
-      }}
-
       function setupRoiEditor(sourceId) {{
         const wrap = document.getElementById(`roi-wrap-${{sourceId}}`);
         const box = document.getElementById(`roi-box-${{sourceId}}`);
