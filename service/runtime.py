@@ -15,6 +15,7 @@ from service.storage import EventRecord, RecognitionSettings, SNAPSHOTS_DIR, Sou
 ANALYZE_INTERVAL = 0.7
 RECONNECT_DELAY = 2.0
 EVENT_COOLDOWN = 8.0
+FRAME_FLUSH_GRABS = 4
 
 
 class SourceWorker:
@@ -61,7 +62,7 @@ class SourceWorker:
             self.last_error = ""
             last_analysis = 0.0
             while not self.stop_event.is_set():
-                ok, frame = capture.read()
+                ok, frame = read_latest_frame(capture)
                 if not ok or frame is None:
                     self.status = "reconnecting"
                     self.last_error = "Frame read failed"
@@ -90,17 +91,18 @@ class SourceWorker:
     def open_capture(self) -> cv2.VideoCapture | None:
         local_capture = open_local_capture(self.source.url)
         if local_capture is not None:
-            ok, frame = local_capture.read()
+            ok, frame = read_latest_frame(local_capture)
             if ok and frame is not None:
                 return local_capture
             local_capture.release()
 
         for candidate in resolve_stream_candidates(self.source.url):
             capture = cv2.VideoCapture(candidate)
+            capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             if not capture.isOpened():
                 capture.release()
                 continue
-            ok, frame = capture.read()
+            ok, frame = read_latest_frame(capture)
             if ok and frame is not None:
                 self.current_url = candidate
                 return capture
@@ -260,21 +262,36 @@ def open_local_capture(source_url: str) -> cv2.VideoCapture | None:
     if lowered.startswith("device://"):
         device_id = normalized.split("://", 1)[1]
         if device_id.isdigit():
-            return cv2.VideoCapture(int(device_id))
-        return cv2.VideoCapture(device_id)
+            capture = cv2.VideoCapture(int(device_id))
+        else:
+            capture = cv2.VideoCapture(device_id)
+        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        return capture
 
     if lowered.startswith("v4l2://"):
         device_path = normalized.split("://", 1)[1]
-        return cv2.VideoCapture(device_path)
+        capture = cv2.VideoCapture(device_path)
+        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        return capture
 
     if lowered.startswith("/dev/video"):
-        return cv2.VideoCapture(normalized)
+        capture = cv2.VideoCapture(normalized)
+        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        return capture
 
     parsed = urlparse(normalized)
     if parsed.scheme == "file" and parsed.path.startswith("/dev/video"):
-        return cv2.VideoCapture(parsed.path)
+        capture = cv2.VideoCapture(parsed.path)
+        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        return capture
 
     return None
+
+
+def read_latest_frame(capture: cv2.VideoCapture):
+    for _ in range(FRAME_FLUSH_GRABS):
+        capture.grab()
+    return capture.read()
 
 
 def save_snapshot(source_id: str, timestamp_ms: int, frame, detection: dict) -> str:
