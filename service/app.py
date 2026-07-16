@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -152,6 +153,15 @@ def rebuild_person_embeddings(person: PersonRecord) -> PersonRecord:
     return person
 
 
+def format_event_timestamp(timestamp: str) -> str:
+    try:
+        dt = datetime.fromisoformat(timestamp)
+        local_dt = dt.astimezone()
+        return local_dt.strftime("%d.%m.%Y %H:%M:%S")
+    except Exception:
+        return timestamp
+
+
 @app.on_event("startup")
 def startup() -> None:
     runtime.start_enabled_sources()
@@ -265,7 +275,7 @@ def admin_page(token: str | None = None, authorization: str | None = Header(defa
     ) or "<div class='muted'>Источников пока нет.</div>"
 
     events_html = "".join(
-        f"<div class='item'><b>{event.source_name}</b> | {event.person_name} | score {event.score} | {event.timestamp}"
+        f"<div class='item'><b>{event.source_name}</b> | {event.person_name} | score {event.score} | {format_event_timestamp(event.timestamp)}"
         + (f" | <a href='/{event.snapshot_path}' target='_blank'>snapshot</a>" if event.snapshot_path else "")
         + (f"<br><a href='/{event.snapshot_path}' target='_blank'><img class='snapshot' src='/{event.snapshot_path}' alt='snapshot'></a>" if event.snapshot_path else "")
         + "</div>"
