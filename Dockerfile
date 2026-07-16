@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libgomp1 \
     ffmpeg \
+    tzdata \
     v4l-utils \
     && rm -rf /var/lib/apt/lists/*
 

@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 import cv2
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
@@ -156,7 +157,8 @@ def rebuild_person_embeddings(person: PersonRecord) -> PersonRecord:
 def format_event_timestamp(timestamp: str) -> str:
     try:
         dt = datetime.fromisoformat(timestamp)
-        local_dt = dt.astimezone()
+        tz_name = os.getenv("APP_TIMEZONE", "").strip() or os.getenv("TZ", "").strip()
+        local_dt = dt.astimezone(ZoneInfo(tz_name)) if tz_name else dt.astimezone()
         return local_dt.strftime("%d.%m.%Y %H:%M:%S")
     except Exception:
         return timestamp

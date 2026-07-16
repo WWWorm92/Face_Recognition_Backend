@@ -9,5 +9,7 @@ services:
       - "8787:8787"
     environment:
       - FACE_API_TOKEN=change_me_long_random_token
+      - TZ=Europe/Moscow
+      - APP_TIMEZONE=Europe/Moscow
     volumes:
       - ../service_data:/app/service_data
