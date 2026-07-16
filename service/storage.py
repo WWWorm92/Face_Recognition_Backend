@@ -42,6 +42,11 @@ class SourceRecord:
     name: str
     url: str
     enabled: bool = True
+    roi_enabled: bool = False
+    roi_x: float = 0.0
+    roi_y: float = 0.0
+    roi_w: float = 1.0
+    roi_h: float = 1.0
 
 
 @dataclass

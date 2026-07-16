@@ -6,7 +6,7 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 import cv2
 import numpy as np
 
-from service.storage import MODELS_DIR, PersonRecord, RecognitionSettings
+from service.storage import MODELS_DIR, PersonRecord, RecognitionSettings, SourceRecord
 
 
 YUNET_MODEL_PATH = MODELS_DIR / "face_detection_yunet_2023mar.onnx"
@@ -208,13 +208,30 @@ class FaceEngine:
                     best_record = record
         return best_record, best_score
 
-    def analyze_frame(self, image: np.ndarray, records: list[PersonRecord]) -> list[dict]:
-        scaled_image, scale = resize_for_processing(image)
+    def analyze_frame(self, image: np.ndarray, records: list[PersonRecord], source: SourceRecord | None = None) -> list[dict]:
+        region_image = image
+        offset_x = 0
+        offset_y = 0
+        if source and source.roi_enabled:
+            height, width = image.shape[:2]
+            x1 = max(0, min(width - 1, int(width * source.roi_x)))
+            y1 = max(0, min(height - 1, int(height * source.roi_y)))
+            x2 = max(x1 + 1, min(width, int(width * (source.roi_x + source.roi_w))))
+            y2 = max(y1 + 1, min(height, int(height * (source.roi_y + source.roi_h))))
+            region_image = image[y1:y2, x1:x2]
+            offset_x = x1
+            offset_y = y1
+
+        scaled_image, scale = resize_for_processing(region_image)
         faces = self.detect_faces(scaled_image)
         result = []
         for face in faces:
             scaled_face = face.copy()
             scaled_face[:14] = scaled_face[:14] / scale
+            scaled_face[0] += offset_x
+            scaled_face[1] += offset_y
+            scaled_face[4:14:2] += offset_x
+            scaled_face[5:14:2] += offset_y
             x, y, w, h = [int(value) for value in scaled_face[:4]]
             aligned_face = self.recognizer.alignCrop(image, scaled_face)
             if aligned_face is None or aligned_face.size == 0:

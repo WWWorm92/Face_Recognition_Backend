@@ -75,7 +75,7 @@ class SourceWorker:
                 self.settings = self.storage.get_settings()
                 self.engine.set_settings(self.settings)
                 try:
-                    detections = self.engine.analyze_frame(frame, people_cache)
+                    detections = self.engine.analyze_frame(frame, people_cache, self.source)
                 except Exception as error:
                     self.last_error = str(error)
                     continue
@@ -224,6 +224,33 @@ class RuntimeManager:
                     }
                 )
         return statuses
+
+    def capture_preview(self, source_id: str):
+        source = next((item for item in self.storage.list_sources() if item.source_id == source_id), None)
+        if source is None:
+            raise ValueError("Source not found")
+
+        local_capture = open_local_capture(source.url)
+        if local_capture is not None:
+            try:
+                ok, frame = local_capture.read()
+                if ok and frame is not None:
+                    return frame
+            finally:
+                local_capture.release()
+
+        for candidate in resolve_stream_candidates(source.url):
+            capture = cv2.VideoCapture(candidate)
+            try:
+                if not capture.isOpened():
+                    continue
+                ok, frame = capture.read()
+                if ok and frame is not None:
+                    return frame
+            finally:
+                capture.release()
+
+        raise ValueError("Unable to capture preview frame")
 
 
 def open_local_capture(source_url: str) -> cv2.VideoCapture | None:
